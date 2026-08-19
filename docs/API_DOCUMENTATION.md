@@ -1,15 +1,16 @@
-# 📖 توثيق الـ API - تطبيق تشخيص الأمراض الجلدية بالذكاء الاصطناعي (Skin Disease Diagnosis API)
+# 📖 توثيق الـ API - نظام "دكتور حكيم" لتشخيص الأمراض الجلدية (Dr. Hakeem Skin Disease Diagnosis API)
 
-دليل شامل ومفصل لمطوري التطبيقات (Mobile Flutter / React Native / iOS / Android) ومطوري الويب (Frontend Web) للربط مع الخلفية البرمجية (Backend).
+دليل هندسي متكامل ومفصل لمطوري التطبيقات (Mobile Flutter / React Native / iOS / Android) ومطوري الويب (Frontend Web) للربط مع مشروع **Dr. Hakeem API**.
 
 ---
 
-## 📌 1. معلومات عامة والاتصال (General Specifications)
+## 📌 1. مواصفات النظام العامة (System Specifications)
 
-- **Base URL:** `http://localhost:8000/api/v1` (أو رابط الـ Server الرئيسي في الإنتاج).
-- **Default Format:** `application/json` لجميع الطلبات والاستجابات.
-- **Image Upload Format:** `multipart/form-data` عند رفع صور الفحص الجلدي.
-- **Authentication:** يتم استخدام **Laravel Sanctum**. يجب إرسال الـ Bearer Token في الـ Headers لجميع الطلبات المحمية:
+- **Base URL:** `http://localhost:8000/api/v1` (أو الرابط النهائي في بيئة الإنتاج).
+- **Architecture Pattern:** Action-Domain-Responder (ADR) + Service-Repository Pattern.
+- **Default Format:** `application/json`.
+- **Image Upload Format:** `multipart/form-data`.
+- **Authentication:** Laravel Sanctum Bearer Token.
   ```http
   Authorization: Bearer <YOUR_ACCESS_TOKEN>
   Accept: application/json
@@ -17,11 +18,10 @@
 
 ---
 
-## 🔐 2. حسابات المستخدمين والمصادقة (Authentication Endpoints)
+## 🔐 2. حسابات وبينات المريض (Auth & Patient Profile Domain)
 
 ### 2.1 تسجيل حساب جديد (Register)
 - **Endpoint:** `POST /api/v1/auth/register`
-- **Headers:** `Accept: application/json`, `Content-Type: application/json`
 - **Request Body:**
 ```json
 {
@@ -32,45 +32,12 @@
   "role": "patient"
 }
 ```
-> **ملاحظة حول `role`:** قيمة اختيارية، تقبل `patient` (مريض) أو `doctor` (طبيب). القيمة الافتراضية هي `patient`.
-
-- **Success Response (201 Created):**
-```json
-{
-  "success": true,
-  "message": "تم إنشاء الحساب بنجاح",
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "أحمد محمود",
-      "email": "ahmed@example.com",
-      "roles": [
-        "patient"
-      ],
-      "created_at": "2026-08-20T01:50:00.000000Z"
-    },
-    "token": "1|abcdef1234567890..."
-  }
-}
-```
-
-- **Validation Error Response (422 Unprocessable Entity):**
-```json
-{
-  "message": "هذا البريد الإلكتروني مستخدم بالفعل",
-  "errors": {
-    "email": [
-      "هذا البريد الإلكتروني مستخدم بالفعل"
-    ]
-  }
-}
-```
+- **Response (201 Created):** يُنشئ الحساب ويُنشئ تلقائياً ملف مريض يحتوي على كود فريد `patient_code` (مثل `PAT-A8F2K1`).
 
 ---
 
 ### 2.2 تسجيل الدخول (Login)
 - **Endpoint:** `POST /api/v1/auth/login`
-- **Headers:** `Accept: application/json`, `Content-Type: application/json`
 - **Request Body:**
 ```json
 {
@@ -79,239 +46,157 @@
 }
 ```
 
-- **Success Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "تم تسجيل الدخول بنجاح",
-  "data": {
-    "user": {
-      "id": 1,
-      "name": "أحمد محمود",
-      "email": "ahmed@example.com",
-      "roles": [
-        "patient"
-      ],
-      "created_at": "2026-08-20T01:50:00.000000Z"
-    },
-    "token": "2|xyz987654321..."
-  }
-}
-```
-
 ---
 
-### 2.3 تسجيل الخروج (Logout)
-- **Endpoint:** `POST /api/v1/auth/logout`
-- **Headers:** `Authorization: Bearer <TOKEN>`, `Accept: application/json`
-
-- **Success Response (200 OK):**
+### 2.3 جلب ملف المريض (Get Patient Profile)
+- **Endpoint:** `GET /api/v1/patient/profile`
+- **Headers:** `Authorization: Bearer <TOKEN>`
+- **Response (200 OK):**
 ```json
 {
   "success": true,
-  "message": "تم تسجيل الخروج بنجاح",
-  "data": null
-}
-```
-
----
-
-### 2.4 الملف الشخصي (Profile)
-- **Endpoint:** `GET /api/v1/auth/profile`
-- **Headers:** `Authorization: Bearer <TOKEN>`, `Accept: application/json`
-
-- **Success Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "بيانات الملف الشخصي",
+  "message": "بيانات ملف المريض",
   "data": {
     "id": 1,
-    "name": "أحمد محمود",
-    "email": "ahmed@example.com",
-    "roles": [
-      "patient"
-    ],
-    "created_at": "2026-08-20T01:50:00.000000Z"
+    "user_id": 1,
+    "patient_code": "PAT-A8F2K1",
+    "age": 32,
+    "blood_group": "A+",
+    "skin_type": "Type II",
+    "conditions": ["Diabetes"],
+    "active_allergies": ["Penicillin"],
+    "settings": {
+      "notifications_enabled": true,
+      "dark_mode": false,
+      "language": "ar"
+    }
   }
 }
 ```
 
 ---
 
-## 🩺 3. فحوصات وتشخيص الأمراض الجلدية (Skin Scan Diagnosis Endpoints)
+### 2.4 تحديث إعدادات وملف المريض (Update Patient Settings)
+- **Endpoint:** `PUT /api/v1/patient/settings`
+- **Headers:** `Authorization: Bearer <TOKEN>`, `Content-Type: application/json`
+- **Request Body:**
+```json
+{
+  "age": 33,
+  "blood_group": "A+",
+  "skin_type": "Type III",
+  "conditions": ["Hypertension"],
+  "active_allergies": ["Pollen"],
+  "settings": {
+    "notifications_enabled": true,
+    "dark_mode": true,
+    "language": "ar"
+  }
+}
+```
 
-### 3.1 رفع صورة وعمل فحص بالذكاء الاصطناعي (Upload Scan & Predict)
-- **Endpoint:** `POST /api/v1/scans`
-- **Headers:** `Authorization: Bearer <TOKEN>`, `Accept: application/json`, `Content-Type: multipart/form-data`
-- **Form Body (FormData):**
-  - `file`: (File - **مطلوب**) صورة العينة الجلدية المراد فحصها (صيغ مقبولة: `jpeg`, `png`, `jpg`, `webp` | أقصى حجم: `10MB`).
-  - `tta`: (Boolean - **اختياري**) خيار Test-Time Augmentation (افتراضي: `true`).
+---
 
-- **Success Response (201 Created):**
+## 🩺 3. تشخيص الأمراض الجلدية (Diagnosis & AI Scan Domain)
+
+### 3.1 معالجة صورة وفحص بالذكاء الاصطناعي (Process Scan)
+- **Endpoint:** `POST /api/v1/diagnoses/process`
+- **Headers:** `Authorization: Bearer <TOKEN>`, `Content-Type: multipart/form-data`
+- **Form Data:**
+  - `file`: (File - **مطلوب**) صورة المرض الجلدي (الامتدادات: `jpeg`, `png`, `jpg`, `webp` | الحد الأقصى: 10MB).
+  - `tta`: (Boolean - **اختياري**) تفعيل Test-Time Augmentation (افتراضي: `true`).
+
+- **Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "تم فحص الصورة وتشخيص الحالة بنجاح",
+  "message": "تم فحص الصورة وتشخيص الحالة بنجاح عبر موديل دكتور حكيم",
   "data": {
-    "id": 15,
+    "id": 12,
     "user_id": 1,
-    "image_url": "http://localhost:8000/storage/diagnoses/550e8400-e29b-41d4-a716-446655440000.png",
+    "patient_id_code": "PAT-A8F2K1",
+    "image_url": "http://localhost:8000/storage/diagnoses/sample.png",
     "predicted_class": "nv",
     "predicted_label": "Melanocytic nevi",
     "label_ar": "وحمات صبغية (شامة)",
     "is_malignant": false,
     "confidence": 0.989399,
     "confidence_percentage": "98.94%",
+    "risk_level": "low",
+    "risk_level_label": "منخفض الخطورة",
+    "badge_color": "green",
     "inference_time_ms": 141.29,
-    "tta_used": true,
-    "status": "completed",
-    "status_label": "مكتمل",
-    "error_message": null,
-    "top_3": [
-      {
-        "class": "nv",
-        "label": "Melanocytic nevi",
-        "confidence": 0.989399
-      },
-      {
-        "class": "mel",
-        "label": "Melanoma",
-        "confidence": 0.003657
-      },
-      {
-        "class": "bcc",
-        "label": "Basal cell carcinoma",
-        "confidence": 0.002652
-      }
-    ],
-    "raw_response": {
-      "success": true,
-      "filename": "skin_sample.png",
-      "content_type": "image/png",
-      "inference_time_ms": 141.29,
-      "predicted_class": "nv",
-      "predicted_label": "Melanocytic nevi",
-      "confidence": 0.989399,
-      "top_3": [
-        { "class": "nv", "label": "Melanocytic nevi", "confidence": 0.989399 },
-        { "class": "mel", "label": "Melanoma", "confidence": 0.003657 },
-        { "class": "bcc", "label": "Basal cell carcinoma", "confidence": 0.002652 }
-      ],
-      "tta_used": true,
-      "tta_views": 5
+    "severity_analysis": {
+      "risk_level": "low",
+      "risk_label_ar": "منخفض الخطورة",
+      "badge_color": "green",
+      "is_malignant": false,
+      "recommendation_ar": "النتيجة تشير إلى آفة حميدة غالباً (وحمات صبغية (شامة)). يُنصح بمراقبة أي تغيرات في الشكل أو اللون وتطبيق واقي الشمس بصورة منتظمة.",
+      "recommendation_en": "Low risk lesion detected (Melanocytic nevi). Routine monitoring and general skin protection are advised.",
+      "confidence_score": 0.989399,
+      "inference_time_ms": 141.29
     },
-    "created_at": "2026-08-20T01:52:00.000000Z",
-    "updated_at": "2026-08-20T01:52:01.000000Z"
-  }
-}
-```
-
----
-
-### 3.2 عرض سجل الفحوصات (List Scans)
-- **Endpoint:** `GET /api/v1/scans`
-- **Headers:** `Authorization: Bearer <TOKEN>`, `Accept: application/json`
-- **Query Parameters (اختيارية للتصفية والتقسيم):**
-  - `status`: تصفية حسب حالة الفحص (`completed`, `pending`, `failed`).
-  - `predicted_class`: تصفية حسب كود المرض (`nv`, `mel`, `bcc`, `bkl`, `akiec`).
-  - `per_page`: عدد الفحوصات في الصفحة (مثال: `15`).
-
-- **Success Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "قائمة فحوصات الأمراض الجلدية",
-  "data": {
-    "data": [
-      {
-        "id": 15,
-        "user_id": 1,
-        "image_url": "http://localhost:8000/storage/diagnoses/550e8400-e29b-41d4-a716-446655440000.png",
-        "predicted_class": "nv",
-        "predicted_label": "Melanocytic nevi",
-        "label_ar": "وحمات صبغية (شامة)",
-        "is_malignant": false,
-        "confidence": 0.989399,
-        "confidence_percentage": "98.94%",
-        "inference_time_ms": 141.29,
-        "tta_used": true,
-        "status": "completed",
-        "status_label": "مكتمل",
-        "created_at": "2026-08-20T01:52:00.000000Z"
-      }
+    "status": "completed",
+    "top_3": [
+      { "class": "nv", "label": "Melanocytic nevi", "confidence": 0.989399 },
+      { "class": "mel", "label": "Melanoma", "confidence": 0.003657 },
+      { "class": "bcc", "label": "Basal cell carcinoma", "confidence": 0.002652 }
     ],
-    "pagination": {
-      "total": 1,
-      "count": 1,
-      "per_page": 15,
-      "current_page": 1,
-      "total_pages": 1
-    }
+    "created_at": "2026-08-20T02:00:00.000000Z"
   }
 }
 ```
 
 ---
 
-### 3.3 عرض تفاصيل فحص محدد (Get Scan Details)
-- **Endpoint:** `GET /api/v1/scans/{id}`
-- **Headers:** `Authorization: Bearer <TOKEN>`, `Accept: application/json`
-
-- **Success Response (200 OK):** يعيد كائن التشخيص الكامل شامل تفاصيل الـ `top_3` الـ `raw_response` الكاملة.
+### 3.2 عرض سجل الفحوصات التاريخية (Diagnosis History)
+- **Endpoint:** `GET /api/v1/diagnoses/history`
+- **Query Params:** `status`, `predicted_class`, `per_page`
 
 ---
 
-### 3.4 حذف فحص (Delete Scan)
-- **Endpoint:** `DELETE /api/v1/scans/{id}`
-- **Headers:** `Authorization: Bearer <TOKEN>`, `Accept: application/json`
-
-- **Success Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "تم حذف الفحص والملفات المرتبطة به بنجاح",
-  "data": null
-}
-```
+### 3.3 تفاصيل فحص واحد (Get Scan Details)
+- **Endpoint:** `GET /api/v1/diagnoses/{id}`
 
 ---
 
-## 🤖 4. معلومات حالة الموديل الخارجي (AI Model Status)
+## 📊 4. إحصائيات لوحة التحكم (Dashboard Domain)
 
-### 4.1 الاستعلام عن تشغيل الموديل (Model Info)
-- **Endpoint:** `GET /api/v1/ai/info`
-- **Headers:** `Accept: application/json`
-
-- **Success Response (200 OK):**
+### 4.1 جلب إحصائيات النظام ولوحة التحكم (Dashboard Stats)
+- **Endpoint:** `GET /api/v1/dashboard/stats`
+- **Headers:** `Authorization: Bearer <TOKEN>`
+- **Response (200 OK):**
 ```json
 {
   "success": true,
-  "message": "معلومات حالة موديل الذكاء الاصطناعي الخارجي",
+  "message": "إحصائيات لوحة التحكم لموديل دكتور حكيم",
   "data": {
-    "status": "online",
-    "details": {
-      "model": "Skin-Disease-ResNet50",
-      "status": "running"
-    }
+    "total_scans": 45,
+    "completed_scans": 42,
+    "failed_scans": 3,
+    "high_risk_scans": 5,
+    "growth_rate": 15.5,
+    "accuracy_metrics": {
+      "average_confidence": 0.9654,
+      "average_confidence_percentage": "96.54%",
+      "average_inference_time_ms": 138.45
+    },
+    "disease_distribution": [
+      { "class": "akiec", "label_ar": "التقان السعفي", "is_malignant": true, "count": 2 },
+      { "class": "bcc", "label_ar": "سرطان الخلايا القاعدية", "is_malignant": true, "count": 3 },
+      { "class": "bkl", "label_ar": "آفات التقرن الحميدة", "is_malignant": false, "count": 10 },
+      { "class": "nv", "label_ar": "وحمات صبغية (شامة)", "is_malignant": false, "count": 27 },
+      { "class": "mel", "label_ar": "ورم قتامي (ميلانوما)", "is_malignant": true, "count": 0 }
+    ],
+    "recent_scans": []
   }
 }
 ```
 
 ---
 
-## 📊 5. دليل الأكواد والقيم الثابتة (Enums Reference)
-
-### 5.1 أكواد الأمراض الجلدية (`predicted_class`)
-| الكود (`predicted_class`) | الاسم الإنجليزي (`predicted_label`) | الاسم العربي (`label_ar`) | خطير / سرطاني (`is_malignant`) |
-| :--- | :--- | :--- | :--- |
-| `akiec` | Actinic Keratoses and Intraepithelial Carcinoma | التقان السعفي وسرطان الخلايا الحرشوفية | ⚠️ نعم (`true`) |
-| `bcc` | Basal Cell Carcinoma | سرطان الخلايا القاعدية | ⚠️ نعم (`true`) |
-| `bkl` | Benign Keratosis-like Lesions | آفات التقرن الحميدة | 🟢 لا (`false`) |
-| `nv` | Melanocytic Nevi | وحمات صبغية (شامة) | 🟢 لا (`false`) |
-| `mel` | Melanoma | ورم قتامي (ميلانوما) | ⚠️ نعم (`true`) |
-
-### 5.2 حالات الفحص (`status`)
-- `pending`: الفحص جاري ومعالجة الصورة قيد الانتظار.
-- `completed`: تم التشخيص بنجاح واستلام النتيجة كاملة من الذكاء الاصطناعي.
-- `failed`: حدث خطأ في الاتصال بالخدمة الخارجية لموديل الذكاء الاصطناعي.
+## ⚠️ 5. مستويات الخطورة (`RiskLevel`)
+- `low`: منخفض الخطورة (عادة حالات حميدة `nv` أو `bkl`).
+- `moderate`: متوسط الخطورة (يتطلب مراجعة استشارية).
+- `high`: عالي الخطورة (سرطاني محتمل مثل `bcc` أو `akiec`).
+- `critical`: حرج جداً (سرطاني مؤكد بنسبة عالية مثل `mel` أو `bcc` بنسبة تأكد مرتفعة).

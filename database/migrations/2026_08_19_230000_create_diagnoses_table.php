@@ -14,11 +14,14 @@ return new class extends Migration
         Schema::create('diagnoses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('patient_id_code')->nullable();
             $table->string('image_path');
             $table->string('predicted_class')->nullable();
             $table->string('predicted_label')->nullable();
             $table->decimal('confidence', 8, 6)->nullable();
+            $table->string('risk_level')->default('low');
             $table->decimal('inference_time_ms', 10, 2)->nullable();
+            $table->json('severity_analysis')->nullable();
             $table->boolean('tta_used')->default(false);
             $table->json('raw_response')->nullable();
             $table->string('status')->default('pending');
@@ -26,7 +29,9 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['user_id', 'status']);
+            $table->index('patient_id_code');
             $table->index('predicted_class');
+            $table->index('risk_level');
         });
     }
 

@@ -11,7 +11,6 @@ use App\Models\Diagnosis;
 use App\Services\Diagnosis\DiagnosisService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class DiagnosisController extends BaseController
 {
@@ -33,9 +32,17 @@ class DiagnosisController extends BaseController
 
         return $this->sendResponse(
             new DiagnosisResource($diagnosis->load('user')),
-            'تم فحص الصورة وتشخيص الحالة بنجاح',
+            'تم فحص الصورة وتشخيص الحالة بنجاح عبر موديل دكتور حكيم',
             201
         );
+    }
+
+    /**
+     * Alias endpoint for POST /api/v1/diagnoses/process
+     */
+    public function process(StoreDiagnosisRequest $request): JsonResponse
+    {
+        return $this->store($request);
     }
 
     /**
@@ -50,8 +57,16 @@ class DiagnosisController extends BaseController
 
         return $this->sendResponse(
             new DiagnosisCollection($diagnoses),
-            'قائمة فحوصات الأمراض الجلدية'
+            'سجل فحوصات الأمراض الجلدية'
         );
+    }
+
+    /**
+     * Alias endpoint for GET /api/v1/diagnoses/history
+     */
+    public function history(IndexDiagnosisRequest $request): JsonResponse
+    {
+        return $this->index($request);
     }
 
     /**

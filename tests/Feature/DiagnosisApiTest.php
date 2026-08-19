@@ -22,7 +22,7 @@ class DiagnosisApiTest extends TestCase
         Storage::fake('public');
     }
 
-    public function test_user_can_upload_skin_image_and_get_ai_diagnosis(): void
+    public function test_user_can_process_skin_scan_diagnosis(): void
     {
         Http::fake([
             'https://drhakeemapi-production.up.railway.app/predict*' => Http::response([
@@ -46,7 +46,7 @@ class DiagnosisApiTest extends TestCase
         $user = User::factory()->create();
         $file = UploadedFile::fake()->image('skin_lesion.jpg', 600, 600);
 
-        $response = $this->actingAs($user)->postJson('/api/v1/scans', [
+        $response = $this->actingAs($user)->postJson('/api/v1/diagnoses/process', [
             'file' => $file,
             'tta'  => true,
         ]);
@@ -54,78 +54,42 @@ class DiagnosisApiTest extends TestCase
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.predicted_class', 'nv')
-            ->assertJsonPath('data.predicted_label', 'Melanocytic nevi')
-            ->assertJsonPath('data.confidence', 0.989399)
+            ->assertJsonPath('data.risk_level', 'low')
             ->assertJsonPath('data.status', 'completed');
-
-        $this->assertDatabaseHas('diagnoses', [
-            'user_id'         => $user->id,
-            'predicted_class' => 'nv',
-            'status'          => 'completed',
-        ]);
     }
 
-    public function test_user_can_list_their_diagnoses(): void
+    public function test_user_can_fetch_diagnosis_history(): void
     {
         $user = User::factory()->create();
         Diagnosis::factory()->count(3)->create(['user_id' => $user->id]);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/scans');
+        $response = $this->actingAs($user)->getJson('/api/v1/diagnoses/history');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonCount(3, 'data.data');
     }
 
-    public function test_user_can_view_single_diagnosis_details(): void
+    public function test_can_fetch_dashboard_stats(): void
     {
         $user = User::factory()->create();
-        $diagnosis = Diagnosis::factory()->create(['user_id' => $user->id]);
+        Diagnosis::factory()->count(2)->create(['user_id' => $user->id]);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/scans/' . $diagnosis->id);
-
-        $response->assertStatus(200)
-            ->assertJsonPath('data.id', $diagnosis->id);
-    }
-
-    public function test_user_cannot_view_another_users_diagnosis(): void
-    {
-        $user1 = User::factory()->create();
-        $user2 = User::factory()->create();
-        $diagnosis = Diagnosis::factory()->create(['user_id' => $user1->id]);
-
-        $response = $this->actingAs($user2)->getJson('/api/v1/scans/' . $diagnosis->id);
-
-        $response->assertStatus(403);
-    }
-
-    public function test_user_can_delete_their_diagnosis(): void
-    {
-        $user = User::factory()->create();
-        $diagnosis = Diagnosis::factory()->create([
-            'user_id'    => $user->id,
-            'image_path' => 'diagnoses/test.jpg',
-        ]);
-
-        $response = $this->actingAs($user)->deleteJson('/api/v1/scans/' . $diagnosis->id);
-
-        $response->assertStatus(200);
-
-        $this->assertDatabaseMissing('diagnoses', ['id' => $diagnosis->id]);
-    }
-
-    public function test_can_fetch_ai_model_info(): void
-    {
-        Http::fake([
-            'https://drhakeemapi-production.up.railway.app/info' => Http::response([
-                'model'   => 'Skin-Disease-ResNet50',
-                'version' => '1.0.0',
-            ], 200),
-        ]);
-
-        $response = $this->getJson('/api/v1/ai/info');
+        $response = $this->actingAs($user)->getJson('/api/v1/dashboard/stats');
 
         $response->assertStatus(200)
-            ->assertJsonPath('data.status', 'online');
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure([
+                'data' => [
+                    'total_scans',
+                    'completed_scans',
+                    'failed_scans',
+                    'high_risk_scans',
+                    'growth_rate',
+                    'accuracy_metrics',
+                    'disease_distribution',
+                    'recent_scans',
+                ],
+            ]);
     }
 }

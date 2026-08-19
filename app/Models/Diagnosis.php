@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RiskLevel;
 use App\Enums\ScanStatus;
 use App\Enums\SkinDiseaseClass;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,11 +16,14 @@ class Diagnosis extends Model
 
     protected $fillable = [
         'user_id',
+        'patient_id_code',
         'image_path',
         'predicted_class',
         'predicted_label',
         'confidence',
+        'risk_level',
         'inference_time_ms',
+        'severity_analysis',
         'tta_used',
         'raw_response',
         'status',
@@ -28,10 +32,12 @@ class Diagnosis extends Model
 
     protected $casts = [
         'predicted_class'   => SkinDiseaseClass::class,
+        'risk_level'        => RiskLevel::class,
         'status'            => ScanStatus::class,
         'confidence'        => 'float',
         'inference_time_ms' => 'float',
         'tta_used'          => 'boolean',
+        'severity_analysis' => 'array',
         'raw_response'      => 'array',
     ];
 

@@ -21,11 +21,11 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
         ]);
 
-        // 1. Primary Patient User (Matches Postman Collection Default Credentials)
+        // 1. Primary Patient User (Salma Mohamed - Backend Developer)
         $patientUser = User::firstOrCreate(
-            ['email' => 'ahmed.hakeem@example.com'],
+            ['email' => 'salma.mohamed@example.com'],
             [
-                'name'     => 'أحمد محمود',
+                'name'     => 'سلمى محمد',
                 'password' => bcrypt('Password123!'),
             ]
         );
@@ -35,14 +35,14 @@ class DatabaseSeeder extends Seeder
             ['user_id' => $patientUser->id],
             [
                 'patient_code'     => 'PAT-A8F2K1',
-                'age'              => 32,
+                'age'              => 25,
                 'blood_group'      => 'A+',
                 'skin_type'        => 'Type II',
-                'conditions'       => ['Hypertension'],
-                'active_allergies' => ['Penicillin'],
+                'conditions'       => [],
+                'active_allergies' => [],
                 'settings'         => [
                     'notifications_enabled' => true,
-                    'dark_mode'             => false,
+                    'dark_mode'             => true,
                     'language'              => 'ar',
                 ],
             ]
@@ -52,7 +52,7 @@ class DatabaseSeeder extends Seeder
         $doctorUser = User::firstOrCreate(
             ['email' => 'doctor@skindiagnosis.com'],
             [
-                'name'     => 'د. أحمد الحكيم',
+                'name'     => 'د. حكيم علي',
                 'password' => bcrypt('Password123!'),
             ]
         );
@@ -106,7 +106,7 @@ class DatabaseSeeder extends Seeder
         $patientUser2 = User::firstOrCreate(
             ['email' => 'patient@skindiagnosis.com'],
             [
-                'name'     => 'على حسن',
+                'name'     => 'علي حسن',
                 'password' => bcrypt('Password123!'),
             ]
         );
@@ -129,7 +129,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 5. Seed Sample Diagnosis Scans for Patient 1
+        // 5. Seed Sample Diagnosis Scans for Salma Mohamed
         Diagnosis::firstOrCreate(
             [
                 'user_id'         => $patientUser->id,

@@ -47,7 +47,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"أحمد محمود\",\n  \"email\": \"ahmed.hakeem@example.com\",\n  \"password\": \"Password123!\",\n  \"password_confirmation\": \"Password123!\",\n  \"role\": \"patient\"\n}"
+              "raw": "{\n  \"name\": \"سلمى محمد\",\n  \"email\": \"salma.mohamed@example.com\",\n  \"password\": \"Password123!\",\n  \"password_confirmation\": \"Password123!\",\n  \"role\": \"patient\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
@@ -83,7 +83,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"ahmed.hakeem@example.com\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"email\": \"salma.mohamed@example.com\",\n  \"password\": \"Password123!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",

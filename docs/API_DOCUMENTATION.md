@@ -25,8 +25,8 @@
 - **Request Body:**
 ```json
 {
-  "name": "أحمد محمود",
-  "email": "ahmed@example.com",
+  "name": "سلمى محمد",
+  "email": "salma.mohamed@example.com",
   "password": "Password123!",
   "password_confirmation": "Password123!",
   "role": "patient"

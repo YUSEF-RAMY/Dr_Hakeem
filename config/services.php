@@ -38,7 +38,7 @@ return [
     'ai_skin_diagnosis' => [
         'base_url' => env('AI_DIAGNOSIS_BASE_URL', 'https://drhakeemapi-production.up.railway.app'),
         'predict_endpoint' => '/predict',
-        'info_endpoint' => '/info',
+        'info_endpoint' => env('AI_DIAGNOSIS_INFO_ENDPOINT', '/model-info'),
         'timeout' => (int) env('AI_DIAGNOSIS_TIMEOUT', 30),
     ],
 

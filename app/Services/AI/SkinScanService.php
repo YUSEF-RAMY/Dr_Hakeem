@@ -11,11 +11,13 @@ class SkinScanService
 {
     protected string $baseUrl;
     protected int $timeout;
+    protected string $infoEndpoint;
 
     public function __construct()
     {
         $this->baseUrl = config('services.ai_skin_diagnosis.base_url', 'https://drhakeemapi-production.up.railway.app');
         $this->timeout = config('services.ai_skin_diagnosis.timeout', 30);
+        $this->infoEndpoint = config('services.ai_skin_diagnosis.info_endpoint', '/model-info');
     }
 
     /**
@@ -81,7 +83,7 @@ class SkinScanService
      */
     public function getModelInfo(): array
     {
-        $url = rtrim($this->baseUrl, '/') . '/info';
+        $url = rtrim($this->baseUrl, '/') . '/' . ltrim($this->infoEndpoint, '/');
 
         try {
             $response = Http::timeout(10)->get($url);
@@ -90,6 +92,17 @@ class SkinScanService
                 return [
                     'status'  => 'online',
                     'details' => $response->json(),
+                ];
+            }
+
+            // Fallback attempt to /model-info
+            $fallbackUrl = rtrim($this->baseUrl, '/') . '/model-info';
+            $fallbackResponse = Http::timeout(10)->get($fallbackUrl);
+
+            if ($fallbackResponse->successful()) {
+                return [
+                    'status'  => 'online',
+                    'details' => $fallbackResponse->json(),
                 ];
             }
 

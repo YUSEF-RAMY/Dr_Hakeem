@@ -24,13 +24,13 @@ class RegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required'     => 'الاسم مطلوب',
-            'email.required'    => 'البريد الإلكتروني مطلوب',
-            'email.email'       => 'يرجى كتابة بريد إلكتروني صحيح',
-            'email.unique'      => 'هذا البريد الإلكتروني مستخدم بالفعل',
-            'password.required' => 'كلمة المرور مطلوبة',
-            'password.min'      => 'يجب أن لا تقل كلمة المرور عن 8 أحرف',
-            'password.confirmed'=> 'تأكيد كلمة المرور غير متطابق',
+            'name.required'      => 'The name field is required.',
+            'email.required'     => 'The email address field is required.',
+            'email.email'        => 'Please provide a valid email address.',
+            'email.unique'       => 'This email address is already registered.',
+            'password.required'  => 'The password field is required.',
+            'password.min'       => 'The password must be at least 8 characters.',
+            'password.confirmed' => 'The password confirmation does not match.',
         ];
     }
 }

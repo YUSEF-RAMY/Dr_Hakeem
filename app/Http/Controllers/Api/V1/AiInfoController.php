@@ -22,7 +22,7 @@ class AiInfoController extends BaseController
 
         return $this->sendResponse(
             new AiInfoResource($infoData),
-            'معلومات حالة موديل الذكاء الاصطناعي الخارجي'
+            'External AI model status and operational metadata retrieved successfully'
         );
     }
 }

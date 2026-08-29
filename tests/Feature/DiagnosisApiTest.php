@@ -25,7 +25,7 @@ class DiagnosisApiTest extends TestCase
     public function test_user_can_process_skin_scan_diagnosis(): void
     {
         Http::fake([
-            'https://drhakeemapi-production.up.railway.app/predict*' => Http::response([
+            '*drhakeem*' => Http::response([
                 'success'           => true,
                 'filename'          => 'skin_sample.png',
                 'content_type'      => 'image/png',
@@ -56,6 +56,49 @@ class DiagnosisApiTest extends TestCase
             ->assertJsonPath('data.predicted_class', 'nv')
             ->assertJsonPath('data.risk_level', 'low')
             ->assertJsonPath('data.status', 'completed');
+    }
+
+    public function test_user_can_process_explain_heatmap_diagnosis(): void
+    {
+        // 1x1 dummy PNG in base64
+        $dummyBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        Http::fake([
+            '*drhakeem*' => Http::response([
+                'success'                    => true,
+                'filename'                   => 'skin_lesion_1.png',
+                'predicted_class'            => 'nv',
+                'predicted_label'            => 'Melanocytic nevi',
+                'confidence'                 => 0.989888,
+                'explained_class'            => 'nv',
+                'explained_label'            => 'Melanocytic nevi',
+                'explained_class_confidence' => 0.989888,
+                'top_predictions'            => [
+                    ['class' => 'nv', 'label' => 'Melanocytic nevi', 'confidence' => 0.989888],
+                    ['class' => 'mel', 'label' => 'Melanoma', 'confidence' => 0.003408],
+                    ['class' => 'bcc', 'label' => 'Basal cell carcinoma', 'confidence' => 0.002603],
+                ],
+                'heatmap_base64'             => $dummyBase64,
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $file = UploadedFile::fake()->image('skin_lesion.png', 500, 500);
+
+        $response = $this->actingAs($user)->postJson('/api/v1/diagnoses/explain', [
+            'file'  => $file,
+            'alpha' => 0.45,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.predicted_class', 'nv')
+            ->assertJsonPath('data.explained_class', 'nv')
+            ->assertJsonPath('data.alpha', 0.45)
+            ->assertJsonPath('data.status', 'completed');
+
+        $heatmapUrl = $response->json('data.heatmap_url');
+        $this->assertNotNull($heatmapUrl);
     }
 
     public function test_user_can_fetch_diagnosis_history(): void

@@ -22,9 +22,9 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required'    => 'البريد الإلكتروني مطلوب',
-            'email.email'       => 'يرجى إدخال بريد إلكتروني صحيح',
-            'password.required' => 'كلمة المرور مطلوبة',
+            'email.required'    => 'The email address field is required.',
+            'email.email'       => 'Please enter a valid email address.',
+            'password.required' => 'The password field is required.',
         ];
     }
 }

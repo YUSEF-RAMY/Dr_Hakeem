@@ -15,7 +15,7 @@ class SkinScanService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.ai_skin_diagnosis.base_url', 'https://drhakeemapi-production.up.railway.app');
+        $this->baseUrl = config('services.ai_skin_diagnosis.base_url', 'https://drhakeem-production.up.railway.app');
         $this->timeout = config('services.ai_skin_diagnosis.timeout', 30);
         $this->infoEndpoint = config('services.ai_skin_diagnosis.info_endpoint', '/model-info');
     }
@@ -54,7 +54,7 @@ class SkinScanService
                     'body' => $response->body(),
                 ]);
 
-                throw new Exception('فشل الاتصال بخدمة الذكاء الاصطناعي الخارجية: ' . $response->status());
+                throw new Exception('Failed to connect to external AI service: ' . $response->status());
             }
 
             $data = $response->json();
@@ -68,6 +68,62 @@ class SkinScanService
             return $data;
         } catch (Exception $e) {
             Log::error('AI Prediction Exception', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Send skin image to AI model explainability endpoint for overlay heatmap.
+     *
+     * @param string|UploadedFile $image File path on disk or UploadedFile instance
+     * @param float $alpha Transparency factor for heatmap overlay (default 0.45)
+     * @return array
+     * @throws Exception
+     */
+    public function explain(string|UploadedFile $image, float $alpha = 0.45): array
+    {
+        $url = rtrim($this->baseUrl, '/') . '/explain?alpha=' . $alpha;
+
+        try {
+            $request = Http::timeout($this->timeout);
+
+            if ($image instanceof UploadedFile) {
+                $fileContents = file_get_contents($image->getRealPath());
+                $fileName = $image->getClientOriginalName();
+                $request->attach('file', $fileContents, $fileName);
+            } else {
+                $fileContents = file_get_contents($image);
+                $fileName = basename($image);
+                $request->attach('file', $fileContents, $fileName);
+            }
+
+            $response = $request->post($url);
+
+            if ($response->failed()) {
+                Log::error('AI Explainability API Failed', [
+                    'url' => $url,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                throw new Exception('Failed to connect to AI explainability heatmap service: ' . $response->status());
+            }
+
+            $data = $response->json();
+
+            if (!isset($data['success']) || $data['success'] !== true) {
+                Log::warning('AI Explain returned unsuccessful payload', [
+                    'response' => isset($data['heatmap_base64']) ? array_merge($data, ['heatmap_base64' => '[BASE64_TRUNCATED]']) : $data,
+                ]);
+            }
+
+            return $data;
+        } catch (Exception $e) {
+            Log::error('AI Explain Exception', [
                 'message' => $e->getMessage(),
                 'trace'   => $e->getTraceAsString(),
             ]);
@@ -109,7 +165,7 @@ class SkinScanService
             return [
                 'status'  => 'degraded',
                 'code'    => $response->status(),
-                'message' => 'تعذر الحصول على معلومات الموديل بنجاح',
+                'message' => 'Failed to retrieve AI model status details',
             ];
         } catch (Exception $e) {
             Log::error('AI Info Endpoint Error', ['message' => $e->getMessage()]);

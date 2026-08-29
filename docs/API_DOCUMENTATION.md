@@ -110,7 +110,7 @@
 ```json
 {
   "success": true,
-  "message": "تم فحص الصورة وتشخيص الحالة بنجاح عبر موديل دكتور حكيم",
+  "message": "Skin image processed and diagnosed successfully via Dr. Hakeem AI model",
   "data": {
     "id": 12,
     "user_id": 1,
@@ -149,13 +149,71 @@
 
 ---
 
-### 3.2 عرض سجل الفحوصات التاريخية (Diagnosis History)
+### 3.2 توليد الخريطة الحرارية الموضعية وخريطة المرض (Heatmap Overlay / Explain)
+- **Endpoint:** `POST /api/v1/diagnoses/explain` (أو `POST /api/v1/scans/explain`)
+- **Headers:** `Authorization: Bearer <TOKEN>`, `Content-Type: multipart/form-data`
+- **Form Data:**
+  - `file`: (File - **مطلوب**) صورة المرض الجلدي (`jpeg`, `png`, `jpg`, `webp` | الحد الأقصى: 10MB).
+  - `alpha`: (Float - **اختياري**) معامل شفافية الخريطة الحرارية (من `0.0` إلى `1.0` | افتراضي: `0.45`).
+
+- **الوصف والفوائد للموبايل:**
+  يقوم هذا الـ Endpoint بإرسال الصورة لنموذج التفسير وتوليد صورة شفافة (Heatmap Overlay) تمكّن مطور الموبايل من عرض موقع المرض والآفة الجلدية بالضبط على الصورة الأصلية. يتم فك تشفير الـ Base64 تلقائياً على السيرفر وتخزينه كملف PNG، ويتم إرجاع رابط مباشر خفيف `heatmap_url` لتسهيل التحميل والعرض على التطبيق دون استهلاك الذاكرة.
+
+- **Response (201 Created):**
+```json
+{
+  "success": true,
+  "message": "Skin image processed and heatmap overlay generated successfully via Dr. Hakeem AI model",
+  "data": {
+    "id": 15,
+    "user_id": 1,
+    "patient_id_code": "PAT-A8F2K1",
+    "image_url": "http://localhost:8000/storage/diagnoses/original.png",
+    "heatmap_url": "http://localhost:8000/storage/diagnoses/heatmaps/8a72b12c-49f3.png",
+    "predicted_class": "nv",
+    "predicted_label": "Melanocytic nevi",
+    "explained_class": "nv",
+    "explained_label": "Melanocytic nevi",
+    "explained_class_confidence": 0.989888,
+    "label_ar": "وحمات صبغية (شامة)",
+    "is_malignant": false,
+    "confidence": 0.989888,
+    "confidence_percentage": "98.99%",
+    "risk_level": "low",
+    "risk_level_label": "منخفض الخطورة",
+    "badge_color": "green",
+    "inference_time_ms": 145.10,
+    "severity_analysis": {
+      "risk_level": "low",
+      "risk_label_ar": "منخفض الخطورة",
+      "badge_color": "green",
+      "is_malignant": false,
+      "recommendation_ar": "النتيجة تشير إلى آفة حميدة غالباً (وحمات صبغية (شامة)). يُنصح بمراقبة أي تغيرات في الشكل أو اللون وتطبيق واقي الشمس بصورة منتظمة.",
+      "recommendation_en": "Low risk lesion detected (Melanocytic nevi). Routine monitoring and general skin protection are advised.",
+      "confidence_score": 0.989888,
+      "overlay_alpha": 0.45
+    },
+    "alpha": 0.45,
+    "status": "completed",
+    "top_predictions": [
+      { "class": "nv", "label": "Melanocytic nevi", "confidence": 0.989888 },
+      { "class": "mel", "label": "Melanoma", "confidence": 0.003408 },
+      { "class": "bcc", "label": "Basal cell carcinoma", "confidence": 0.002603 }
+    ],
+    "created_at": "2026-08-26T17:40:00.000000Z"
+  }
+}
+```
+
+---
+
+### 3.3 عرض سجل الفحوصات التاريخية (Diagnosis History)
 - **Endpoint:** `GET /api/v1/diagnoses/history`
 - **Query Params:** `status`, `predicted_class`, `per_page`
 
 ---
 
-### 3.3 تفاصيل فحص واحد (Get Scan Details)
+### 3.4 تفاصيل فحص واحد (Get Scan Details)
 - **Endpoint:** `GET /api/v1/diagnoses/{id}`
 
 ---

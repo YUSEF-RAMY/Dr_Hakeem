@@ -36,12 +36,14 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         // Standard Dr. Hakeem Diagnosis Endpoints
         Route::post('/diagnoses/process', [DiagnosisController::class, 'process']);
+        Route::post('/diagnoses/explain', [DiagnosisController::class, 'explain']);
         Route::get('/diagnoses/history', [DiagnosisController::class, 'history']);
         Route::get('/diagnoses/{diagnosis}', [DiagnosisController::class, 'show']);
         Route::delete('/diagnoses/{diagnosis}', [DiagnosisController::class, 'destroy']);
 
         // Backwards Compatible Endpoints
         Route::post('/scans', [DiagnosisController::class, 'store']);
+        Route::post('/scans/explain', [DiagnosisController::class, 'explain']);
         Route::get('/scans', [DiagnosisController::class, 'index']);
         Route::get('/scans/{diagnosis}', [DiagnosisController::class, 'show']);
         Route::delete('/scans/{diagnosis}', [DiagnosisController::class, 'destroy']);

@@ -18,7 +18,7 @@ class LoginUserAction
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['البيانات المدخلة غير صحيحة، يرجى التأكد من البريد الإلكتروني وكلمة المرور.'],
+                'email' => ['The provided credentials do not match our records. Please check your email and password.'],
             ]);
         }
 

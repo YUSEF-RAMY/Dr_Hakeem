@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseController;
+use App\Http\Requests\Diagnosis\ExplainDiagnosisRequest;
 use App\Http\Requests\Diagnosis\IndexDiagnosisRequest;
 use App\Http\Requests\Diagnosis\StoreDiagnosisRequest;
 use App\Http\Resources\Diagnosis\DiagnosisCollection;
@@ -32,7 +33,24 @@ class DiagnosisController extends BaseController
 
         return $this->sendResponse(
             new DiagnosisResource($diagnosis->load('user')),
-            'تم فحص الصورة وتشخيص الحالة بنجاح عبر موديل دكتور حكيم',
+            'Skin image processed and diagnosed successfully via Dr. Hakeem AI model',
+            201
+        );
+    }
+
+    /**
+     * Upload skin image and generate AI explainability heatmap overlay.
+     */
+    public function explain(ExplainDiagnosisRequest $request): JsonResponse
+    {
+        $file = $request->file('file');
+        $alpha = (float) $request->input('alpha', 0.45);
+
+        $diagnosis = $this->diagnosisService->processExplain($request->user(), $file, $alpha);
+
+        return $this->sendResponse(
+            new DiagnosisResource($diagnosis->load('user')),
+            'Skin image processed and heatmap overlay generated successfully via Dr. Hakeem AI model',
             201
         );
     }
@@ -57,7 +75,7 @@ class DiagnosisController extends BaseController
 
         return $this->sendResponse(
             new DiagnosisCollection($diagnoses),
-            'سجل فحوصات الأمراض الجلدية'
+            'Skin scan diagnoses history retrieved successfully'
         );
     }
 
@@ -78,7 +96,7 @@ class DiagnosisController extends BaseController
 
         return $this->sendResponse(
             new DiagnosisResource($diagnosis->load('user')),
-            'تفاصيل تشخيص الحالة الجلدية'
+            'Skin scan diagnosis details retrieved successfully'
         );
     }
 
@@ -91,6 +109,6 @@ class DiagnosisController extends BaseController
 
         $this->diagnosisService->deleteDiagnosis($diagnosis);
 
-        return $this->sendResponse(null, 'تم حذف الفحص والملفات المرتبطة به بنجاح');
+        return $this->sendResponse(null, 'Diagnosis record and associated files deleted successfully');
     }
 }

@@ -17,8 +17,18 @@ class SaveUploadedImageAction
      */
     public function execute(UploadedFile $file, string $folder = 'diagnoses'): string
     {
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs($folder, $filename, 'public');
+        $extension = $file->getClientOriginalExtension();
+        if (empty($extension)) {
+            $extension = $file->guessExtension() ?: 'png';
+        }
+
+        $filename = Str::uuid() . '.' . ltrim($extension, '.');
+        $path = $file->storeAs($folder, $filename, ['disk' => 'public', 'visibility' => 'public']);
+
+        $fullPath = Storage::disk('public')->path($path);
+        if (file_exists($fullPath)) {
+            @chmod($fullPath, 0644);
+        }
 
         return $path;
     }

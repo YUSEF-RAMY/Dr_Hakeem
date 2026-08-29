@@ -23,7 +23,7 @@ class DashboardController extends BaseController
 
         return $this->sendResponse(
             new DashboardStatsResource($stats),
-            'إحصائيات لوحة التحكم لموديل دكتور حكيم'
+            'Dashboard statistics and system analytics retrieved successfully'
         );
     }
 }

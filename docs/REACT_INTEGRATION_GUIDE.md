@@ -304,6 +304,89 @@ export default function SkinScanUpload() {
 
 ---
 
+## 🎨 4. مكون عرض الخريطة الحرارية المحددة لموقع المرض (`src/components/SkinScanExplain.jsx`)
+
+مكون React احترافي يعرض صورة المرض الأصلية وتحتها طبقة الـ **Heatmap Overlay** مع متحكم شفافية اسليدر (Opacity Slider) لعرض مكان الإصابة الجلدية بدقة:
+
+```jsx
+import React, { useState } from 'react';
+import api from '../services/api';
+
+export default function SkinScanExplain() {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [alpha, setAlpha] = useState(0.45);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('alpha', alpha.toString());
+
+    setLoading(true);
+    try {
+      const response = await api.post('/diagnoses/explain', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setResult(response.data);
+    } catch (err) {
+      alert('فشل توليد الخريطة الحرارية: ' + (err.message || 'خطأ في السيرفر'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: '650px', margin: '20px auto', fontFamily: 'sans-serif', direction: 'rtl' }}>
+      <h2>🔥 خريطة تظليل وتحديد موقع المرض الجلدي (Heatmap Overlay)</h2>
+
+      <input type="file" accept="image/*" onChange={(e) => {
+        const file = e.target.files[0];
+        if (file) {
+          setSelectedFile(file);
+          setPreviewUrl(URL.createObjectURL(file));
+        }
+      }} />
+
+      <div style={{ marginTop: '10px' }}>
+        <label>شفافية التظليل (Alpha): {alpha}</label>
+        <input
+          type="range"
+          min="0.1"
+          max="1.0"
+          step="0.05"
+          value={alpha}
+          onChange={(e) => setAlpha(parseFloat(e.target.value))}
+          style={{ width: '100%' }}
+        />
+      </div>
+
+      <button onClick={handleUpload} disabled={loading} style={{ marginTop: '10px', padding: '10px 20px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '4px' }}>
+        {loading ? 'جاري التحليل والتظليل...' : 'عرض خريطة المرض الموضعية'}
+      </button>
+
+      {/* عرض الخريطة الحرارية المتراكبة (Heatmap Overlay Stack) */}
+      {result && result.heatmap_url && (
+        <div style={{ marginTop: '20px' }}>
+          <h3>موقع الإصابة الجلدية بالضبط:</h3>
+          <div style={{ position: 'relative', width: '100%', maxWidth: '500px', height: '400px', margin: '0 auto', border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
+            {/* الصورة الأصلية */}
+            <img src={result.image_url} alt="Original Skin" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            {/* طبقة الـ Heatmap فوق الصورة الأصلية */}
+            <img src={result.heatmap_url} alt="Heatmap Overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: alpha, transition: 'opacity 0.2s' }} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
 ## 📊 4. عرض إحصائيات لوحة التحكم (`src/components/DashboardStats.jsx`)
 
 ```jsx

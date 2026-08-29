@@ -24,7 +24,7 @@ class PatientProfileController extends BaseController
 
         return $this->sendResponse(
             new PatientProfileResource($profile),
-            'بيانات ملف المريض'
+            'Patient profile details retrieved successfully'
         );
     }
 
@@ -40,7 +40,7 @@ class PatientProfileController extends BaseController
 
         return $this->sendResponse(
             new PatientProfileResource($profile),
-            'تم تحديث إعدادات وملف المريض بنجاح'
+            'Patient profile and settings updated successfully'
         );
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Diagnosis;
 
 use App\Actions\Diagnosis\DeleteDiagnosisAction;
+use App\Actions\Diagnosis\ProcessExplainAction;
 use App\Actions\Diagnosis\ProcessScanAction;
 use App\Models\Diagnosis;
 use App\Models\User;
@@ -14,6 +15,7 @@ class DiagnosisService
 {
     public function __construct(
         protected ProcessScanAction $processScanAction,
+        protected ProcessExplainAction $processExplainAction,
         protected DeleteDiagnosisAction $deleteDiagnosisAction,
         protected DiagnosisRepositoryInterface $diagnosisRepository
     ) {}
@@ -21,6 +23,11 @@ class DiagnosisService
     public function processScan(User $user, UploadedFile $image, bool $tta = true): Diagnosis
     {
         return $this->processScanAction->execute($user, $image, $tta);
+    }
+
+    public function processExplain(User $user, UploadedFile $image, float $alpha = 0.45): Diagnosis
+    {
+        return $this->processExplainAction->execute($user, $image, $alpha);
     }
 
     public function getUserDiagnoses(User $user, array $filters = [], int $perPage = 15): LengthAwarePaginator

@@ -26,7 +26,7 @@ class AuthController extends BaseController
         return $this->sendResponse([
             'user'  => new UserResource($result['user']),
             'token' => $result['token'],
-        ], 'تم إنشاء الحساب بنجاح', 201);
+        ], 'User account created successfully', 201);
     }
 
     /**
@@ -39,7 +39,7 @@ class AuthController extends BaseController
         return $this->sendResponse([
             'user'  => new UserResource($result['user']),
             'token' => $result['token'],
-        ], 'تم تسجيل الدخول بنجاح');
+        ], 'User logged in successfully');
     }
 
     /**
@@ -49,7 +49,7 @@ class AuthController extends BaseController
     {
         $this->authService->logout($request->user());
 
-        return $this->sendResponse(null, 'تم تسجيل الخروج بنجاح');
+        return $this->sendResponse(null, 'User logged out successfully');
     }
 
     /**
@@ -59,6 +59,6 @@ class AuthController extends BaseController
     {
         $user = $this->authService->getProfile($request->user());
 
-        return $this->sendResponse(new UserResource($user), 'بيانات الملف الشخصي');
+        return $this->sendResponse(new UserResource($user), 'User profile details retrieved successfully');
     }
 }

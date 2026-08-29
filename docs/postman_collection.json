@@ -183,11 +183,6 @@
                   "key": "file",
                   "type": "file",
                   "src": []
-                },
-                {
-                  "key": "tta",
-                  "value": "true",
-                  "type": "text"
                 }
               ]
             },
@@ -197,6 +192,37 @@
               "path": ["diagnoses", "process"]
             },
             "description": "Upload skin lesion image (file) to trigger AI prediction and return risk analysis."
+          }
+        },
+        {
+          "name": "Explain Skin Scan (Heatmap Overlay)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json", "type": "text" },
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "alpha",
+                  "value": "0.45",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/diagnoses/explain",
+              "host": ["{{baseUrl}}"],
+              "path": ["diagnoses", "explain"]
+            },
+            "description": "Upload skin lesion image (file) to trigger AI explainability endpoint, generate heatmap overlay image, and return risk analysis alongside heatmap_url."
           }
         },
         {

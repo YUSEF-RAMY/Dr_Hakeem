@@ -8,7 +8,8 @@ use App\Http\Requests\Diagnosis\IndexDiagnosisRequest;
 use App\Http\Requests\Diagnosis\StoreDiagnosisRequest;
 use App\Http\Resources\Diagnosis\DiagnosisCollection;
 use App\Http\Resources\Diagnosis\DiagnosisResource;
-use App\Models\Diagnosis;
+use App\Http\Resources\Diagnosis\ExplainDiagnosisResource;
+use App\Http\Resources\Diagnosis\ScanDiagnosisResource;
 use App\Services\Diagnosis\DiagnosisService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -31,8 +32,12 @@ class DiagnosisController extends BaseController
 
         $diagnosis = $this->diagnosisService->processScan($request->user(), $file, $tta);
 
+        if ($diagnosis->status?->value === \App\Enums\ScanStatus::FAILED->value) {
+            return $this->sendServiceUnavailable($diagnosis->error_message ?? 'The AI diagnosis service is currently unavailable. Please try again later.');
+        }
+
         return $this->sendResponse(
-            new DiagnosisResource($diagnosis->load('user')),
+            new ScanDiagnosisResource($diagnosis->load('user')),
             'Skin image processed and diagnosed successfully via Dr. Hakeem AI model',
             201
         );
@@ -48,8 +53,12 @@ class DiagnosisController extends BaseController
 
         $diagnosis = $this->diagnosisService->processExplain($request->user(), $file, $alpha);
 
+        if ($diagnosis->status?->value === \App\Enums\ScanStatus::FAILED->value) {
+            return $this->sendServiceUnavailable($diagnosis->error_message ?? 'The AI diagnosis service is currently unavailable. Please try again later.');
+        }
+
         return $this->sendResponse(
-            new DiagnosisResource($diagnosis->load('user')),
+            new ExplainDiagnosisResource($diagnosis->load('user')),
             'Skin image processed and heatmap overlay generated successfully via Dr. Hakeem AI model',
             201
         );
@@ -90,12 +99,18 @@ class DiagnosisController extends BaseController
     /**
      * Get single skin scan diagnosis details.
      */
-    public function show(Diagnosis $diagnosis): JsonResponse
+    public function show(int $diagnosis): JsonResponse
     {
-        $this->authorize('view', $diagnosis);
+        $diagnosisModel = $this->diagnosisService->findById($diagnosis);
+
+        if (!$diagnosisModel) {
+            return $this->sendError('Diagnosis record not found', [], 404);
+        }
+
+        $this->authorize('view', $diagnosisModel);
 
         return $this->sendResponse(
-            new DiagnosisResource($diagnosis->load('user')),
+            new DiagnosisResource($diagnosisModel->load('user')),
             'Skin scan diagnosis details retrieved successfully'
         );
     }
@@ -103,11 +118,17 @@ class DiagnosisController extends BaseController
     /**
      * Delete skin scan diagnosis record & image.
      */
-    public function destroy(Diagnosis $diagnosis): JsonResponse
+    public function destroy(int $diagnosis): JsonResponse
     {
-        $this->authorize('delete', $diagnosis);
+        $diagnosisModel = $this->diagnosisService->findById($diagnosis);
 
-        $this->diagnosisService->deleteDiagnosis($diagnosis);
+        if (!$diagnosisModel) {
+            return $this->sendError('Diagnosis record not found', [], 404);
+        }
+
+        $this->authorize('delete', $diagnosisModel);
+
+        $this->diagnosisService->deleteDiagnosis($diagnosisModel);
 
         return $this->sendResponse(null, 'Diagnosis record and associated files deleted successfully');
     }

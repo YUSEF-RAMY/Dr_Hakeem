@@ -107,6 +107,9 @@
   - `tta`: (Boolean - **اختياري**) تفعيل Test-Time Augmentation (افتراضي: `true`).
 
 - **Response (201 Created):**
+> **ملاحظة:** هذا الـ Endpoint (فحص/تصنيف فقط) **لا يولّد** خريطة حرارية، لذا لا يحتوي الرد على `heatmap_url` ولا `overlay_url` ولا حقول `explained_*`. لاسترجاع الخريطة الحرارية والـ Overlay استخدم `POST /api/v1/diagnoses/explain`.
+>
+> **ملاحظة النسب المئوية:** كل قيم `confidence` في الرد (الحقل الرئيسي `confidence`, `explained_class_confidence`, `top_predictions[].confidence`, `severity_analysis.confidence_score`) تُرجع كنسبة مئوية (0–100). مع حقول نصية إضافية تنتهي بـ `_percentage`. و**داخل `raw_response` كمان** يتم تحويل نفس القيم (`confidence`, `explained_class_confidence`, `top_predictions[].confidence`) إلى نسب مئوية. المودل الأصلي يرجعها ككسر (0–1) ويتم تحويلها تلقائياً على السيرفر.
 ```json
 {
   "success": true,
@@ -120,8 +123,13 @@
     "predicted_label": "Melanocytic nevi",
     "label_ar": "وحمات صبغية (شامة)",
     "is_malignant": false,
-    "confidence": 0.989399,
+    "confidence": 98.94,
     "confidence_percentage": "98.94%",
+    "top_predictions": [
+      { "class": "nv", "label": "Melanocytic nevi", "confidence": 98.94, "confidence_percentage": "98.94%" },
+      { "class": "mel", "label": "Melanoma", "confidence": 0.37, "confidence_percentage": "0.37%" },
+      { "class": "bcc", "label": "Basal cell carcinoma", "confidence": 0.27, "confidence_percentage": "0.27%" }
+    ],
     "risk_level": "low",
     "risk_level_label": "منخفض الخطورة",
     "badge_color": "green",
@@ -133,15 +141,10 @@
       "is_malignant": false,
       "recommendation_ar": "النتيجة تشير إلى آفة حميدة غالباً (وحمات صبغية (شامة)). يُنصح بمراقبة أي تغيرات في الشكل أو اللون وتطبيق واقي الشمس بصورة منتظمة.",
       "recommendation_en": "Low risk lesion detected (Melanocytic nevi). Routine monitoring and general skin protection are advised.",
-      "confidence_score": 0.989399,
+      "confidence_score": 98.94,
       "inference_time_ms": 141.29
     },
     "status": "completed",
-    "top_3": [
-      { "class": "nv", "label": "Melanocytic nevi", "confidence": 0.989399 },
-      { "class": "mel", "label": "Melanoma", "confidence": 0.003657 },
-      { "class": "bcc", "label": "Basal cell carcinoma", "confidence": 0.002652 }
-    ],
     "created_at": "2026-08-20T02:00:00.000000Z"
   }
 }
@@ -170,14 +173,15 @@
     "patient_id_code": "PAT-A8F2K1",
     "image_url": "http://localhost:8000/storage/diagnoses/original.png",
     "heatmap_url": "http://localhost:8000/storage/diagnoses/heatmaps/8a72b12c-49f3.png",
+    "overlay_url": "http://localhost:8000/storage/diagnoses/overlays/7d41c9f2-0a8e.png",
     "predicted_class": "nv",
     "predicted_label": "Melanocytic nevi",
     "explained_class": "nv",
     "explained_label": "Melanocytic nevi",
-    "explained_class_confidence": 0.989888,
+    "explained_class_confidence": 98.99,
     "label_ar": "وحمات صبغية (شامة)",
     "is_malignant": false,
-    "confidence": 0.989888,
+    "confidence": 98.99,
     "confidence_percentage": "98.99%",
     "risk_level": "low",
     "risk_level_label": "منخفض الخطورة",
@@ -190,15 +194,15 @@
       "is_malignant": false,
       "recommendation_ar": "النتيجة تشير إلى آفة حميدة غالباً (وحمات صبغية (شامة)). يُنصح بمراقبة أي تغيرات في الشكل أو اللون وتطبيق واقي الشمس بصورة منتظمة.",
       "recommendation_en": "Low risk lesion detected (Melanocytic nevi). Routine monitoring and general skin protection are advised.",
-      "confidence_score": 0.989888,
+      "confidence_score": 98.99,
       "overlay_alpha": 0.45
     },
     "alpha": 0.45,
     "status": "completed",
     "top_predictions": [
-      { "class": "nv", "label": "Melanocytic nevi", "confidence": 0.989888 },
-      { "class": "mel", "label": "Melanoma", "confidence": 0.003408 },
-      { "class": "bcc", "label": "Basal cell carcinoma", "confidence": 0.002603 }
+      { "class": "nv", "label": "Melanocytic nevi", "confidence": 98.99, "confidence_percentage": "98.99%" },
+      { "class": "mel", "label": "Melanoma", "confidence": 0.34, "confidence_percentage": "0.34%" },
+      { "class": "bcc", "label": "Basal cell carcinoma", "confidence": 0.26, "confidence_percentage": "0.26%" }
     ],
     "created_at": "2026-08-26T17:40:00.000000Z"
   }
@@ -258,3 +262,57 @@
 - `moderate`: متوسط الخطورة (يتطلب مراجعة استشارية).
 - `high`: عالي الخطورة (سرطاني محتمل مثل `bcc` أو `akiec`).
 - `critical`: حرج جداً (سرطاني مؤكد بنسبة عالية مثل `mel` أو `bcc` بنسبة تأكد مرتفعة).
+
+---
+
+## ❌ 6. نظام الأخطاء الموحّد (Unified Error Response)
+
+كل الـ Endpoints بتُرجع الأخطاء بنفس الشكل الموحّد التالي:
+```json
+{
+  "success": false,
+  "message": "رسالة الخطأ",
+  "errors": {}
+}
+```
+- `success`: دائماً `false` عند الخطأ.
+- `message`: وصف مختصر للخطأ.
+- `errors`: (اختياري) تُستخدم مع أخطاء التحقق (Validation) وتعرض كل حقل وأخطاءه.
+
+### رموز حالة HTTP الشائعة:
+
+| الكود | الحالة | مثال `message` |
+|-------|--------|----------------|
+| `400` | طلب غير صحيح | رسالة عامة للطلب غير الصالح |
+| `401` | غير مصادق (Unauthenticated) | `"Unauthenticated."` — أو `"The provided credentials do not match our records."` عند فشل تسجيل الدخول |
+| `403` | غير مصرح (Forbidden) | `"This action is unauthorized."` |
+| `404` | المورد غير موجود | `"Resource not found."` / `"Diagnosis record not found"` |
+| `422` | فشل التحقق (Validation) | `"The given data was invalid."` + `errors` |
+| `503` | خدمة AI الخارجية غير متاحة | `"The AI diagnosis service is currently unavailable..."` |
+
+### مثال على خطأ التحقق (422):
+```json
+{
+  "success": false,
+  "message": "The given data was invalid.",
+  "errors": {
+    "email": ["The email field must be a valid email address."]
+  }
+}
+```
+
+### مثال على فشل تسجيل الدخول (401):
+```json
+{
+  "success": false,
+  "message": "The provided credentials do not match our records."
+}
+```
+
+### مثال على فشل خدمة AI (503):
+```json
+{
+  "success": false,
+  "message": "Failed to connect to AI explainability heatmap service: 502"
+}
+```

@@ -2,9 +2,9 @@
 
 namespace App\Actions\Auth;
 
+use App\Exceptions\InvalidCredentialsException;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class LoginUserAction
 {
@@ -17,9 +17,7 @@ class LoginUserAction
         $user = $this->userRepository->findByEmail($credentials['email']);
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials do not match our records. Please check your email and password.'],
-            ]);
+            throw new InvalidCredentialsException('The provided credentials do not match our records.');
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

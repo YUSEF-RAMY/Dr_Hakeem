@@ -63,6 +63,8 @@ class SkinScanService
                 Log::warning('AI Prediction returned unsuccessful payload', [
                     'response' => $data,
                 ]);
+
+                throw new Exception('AI prediction service returned an unsuccessful result');
             }
 
             return $data;
@@ -117,8 +119,10 @@ class SkinScanService
 
             if (!isset($data['success']) || $data['success'] !== true) {
                 Log::warning('AI Explain returned unsuccessful payload', [
-                    'response' => isset($data['heatmap_base64']) ? array_merge($data, ['heatmap_base64' => '[BASE64_TRUNCATED]']) : $data,
+                    'response' => isset($data['heatmap_base64']) ? array_merge($data, ['heatmap_base64' => '[BASE64_TRUNCATED]', 'overlay_base64' => '[BASE64_TRUNCATED]']) : $data,
                 ]);
+
+                throw new Exception('AI explainability service returned an unsuccessful result');
             }
 
             return $data;

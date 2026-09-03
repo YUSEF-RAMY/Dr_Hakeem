@@ -19,6 +19,7 @@ class Diagnosis extends Model
         'patient_id_code',
         'image_path',
         'heatmap_path',
+        'overlay_path',
         'predicted_class',
         'predicted_label',
         'explained_class',
@@ -82,5 +83,21 @@ class Diagnosis extends Model
         }
 
         return Storage::disk('public')->url($this->heatmap_path);
+    }
+
+    /**
+     * Get full HTTP URL of generated heatmap overlay image.
+     */
+    public function getOverlayUrlAttribute(): ?string
+    {
+        if (!$this->overlay_path) {
+            return null;
+        }
+
+        if (filter_var($this->overlay_path, FILTER_VALIDATE_URL)) {
+            return $this->overlay_path;
+        }
+
+        return Storage::disk('public')->url($this->overlay_path);
     }
 }

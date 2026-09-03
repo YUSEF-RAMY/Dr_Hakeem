@@ -24,6 +24,11 @@ class DeleteDiagnosisAction
             Storage::disk('public')->delete($diagnosis->heatmap_path);
         }
 
+        // Remove overlay image file from storage disk if exists
+        if ($diagnosis->overlay_path && Storage::disk('public')->exists($diagnosis->overlay_path)) {
+            Storage::disk('public')->delete($diagnosis->overlay_path);
+        }
+
         return $this->diagnosisRepository->delete($diagnosis);
     }
 }

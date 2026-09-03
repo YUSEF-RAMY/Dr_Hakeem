@@ -55,37 +55,9 @@ class ProcessExplainAction
             $explainedLabel = $aiResult['explained_label'] ?? $explainedEnumClass?->label();
             $explainedConfidence = isset($aiResult['explained_class_confidence']) ? (float) $aiResult['explained_class_confidence'] : $confidence;
 
-            // 5. Decode and store base64 heatmap overlay image to disk
-            $heatmapPath = null;
-            if (!empty($aiResult['heatmap_base64'])) {
-                $base64Data = $aiResult['heatmap_base64'];
-
-                // Remove Data URI scheme if present (e.g., data:image/png;base64,)
-                if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
-                    $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
-                }
-
-                $base64Data = str_replace(' ', '+', trim($base64Data));
-                $decodedImageData = base64_decode($base64Data);
-
-                if ($decodedImageData !== false && strlen($decodedImageData) > 0) {
-                    Storage::disk('public')->makeDirectory('diagnoses/heatmaps');
-                    $heatmapsDir = Storage::disk('public')->path('diagnoses/heatmaps');
-                    if (file_exists($heatmapsDir)) {
-                        @chmod($heatmapsDir, 0755);
-                    }
-
-                    $heatmapFilename = 'diagnoses/heatmaps/' . Str::uuid() . '.png';
-                    Storage::disk('public')->put($heatmapFilename, $decodedImageData, 'public');
-                    $fullHeatmapPath = Storage::disk('public')->path($heatmapFilename);
-
-                    if (file_exists($fullHeatmapPath)) {
-                        @chmod($fullHeatmapPath, 0644);
-                    }
-
-                    $heatmapPath = $heatmapFilename;
-                }
-            }
+            // 5. Decode and store base64 heatmap + overlay images to disk
+            $heatmapPath = $this->storeBase64Image($aiResult['heatmap_base64'] ?? null, 'diagnoses/heatmaps', 'heatmap');
+            $overlayPath = $this->storeBase64Image($aiResult['overlay_base64'] ?? null, 'diagnoses/overlays', 'overlay');
 
             // 6. Compute Risk Level & Severity Analysis
             $riskLevel = RiskLevel::compute($enumClass, $confidence);
@@ -108,6 +80,10 @@ class ProcessExplainAction
                 $cleanRawResponse['heatmap_url'] = $heatmapPath ? Storage::disk('public')->url($heatmapPath) : null;
                 unset($cleanRawResponse['heatmap_base64']);
             }
+            if (isset($cleanRawResponse['overlay_base64'])) {
+                $cleanRawResponse['overlay_url'] = $overlayPath ? Storage::disk('public')->url($overlayPath) : null;
+                unset($cleanRawResponse['overlay_base64']);
+            }
 
             $updateData = [
                 'predicted_class'            => $enumClass?->value ?? $predictedClassRaw,
@@ -120,6 +96,7 @@ class ProcessExplainAction
                 'inference_time_ms'          => isset($aiResult['inference_time_ms']) ? (float) $aiResult['inference_time_ms'] : null,
                 'severity_analysis'          => $severityAnalysis,
                 'heatmap_path'               => $heatmapPath,
+                'overlay_path'               => $overlayPath,
                 'alpha'                      => $alpha,
                 'raw_response'               => $cleanRawResponse,
                 'status'                     => ScanStatus::COMPLETED->value,
@@ -141,6 +118,44 @@ class ProcessExplainAction
 
             return $diagnosis->fresh();
         }
+    }
+
+    protected function storeBase64Image(?string $base64Data, string $directory, string $label): ?string
+    {
+        if (empty($base64Data)) {
+            return null;
+        }
+
+        // Detect extension from Data URI scheme if present (e.g., data:image/png;base64,)
+        $extension = 'png';
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
+            $extension = $type[1] === 'jpeg' ? 'jpg' : $type[1];
+            $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
+        }
+
+        $base64Data = str_replace(' ', '+', trim($base64Data));
+        $decodedImageData = base64_decode($base64Data);
+
+        if ($decodedImageData === false || strlen($decodedImageData) === 0) {
+            Log::warning('Failed to decode base64 ' . $label . ' image data');
+            return null;
+        }
+
+        Storage::disk('public')->makeDirectory($directory);
+        $dirPath = Storage::disk('public')->path($directory);
+        if (file_exists($dirPath)) {
+            @chmod($dirPath, 0755);
+        }
+
+        $filename = $directory . '/' . Str::uuid() . '.' . $extension;
+        Storage::disk('public')->put($filename, $decodedImageData, 'public');
+        $fullPath = Storage::disk('public')->path($filename);
+
+        if (file_exists($fullPath)) {
+            @chmod($fullPath, 0644);
+        }
+
+        return $filename;
     }
 
     protected function generateArabicRecommendation(RiskLevel $riskLevel, ?SkinDiseaseClass $diseaseClass): string

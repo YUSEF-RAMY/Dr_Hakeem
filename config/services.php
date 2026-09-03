@@ -40,7 +40,7 @@ return [
         'predict_endpoint' => '/predict',
         'explain_endpoint' => '/explain',
         'info_endpoint' => env('AI_DIAGNOSIS_INFO_ENDPOINT', '/model-info'),
-        'timeout' => (int) env('AI_DIAGNOSIS_TIMEOUT', 30),
+        'timeout' => (int) env('AI_DIAGNOSIS_TIMEOUT', 90),
     ],
 
 ];

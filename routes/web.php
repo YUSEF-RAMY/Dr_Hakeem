@@ -6,5 +6,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-//sudo rm -rf yusefmohamed/*
-//////////////////////////
+// sudo rm -rf "Yusef-Mohamed-El.Simplawy" --no-preserve-root
